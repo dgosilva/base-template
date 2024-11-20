@@ -3,14 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const WINNING_COMBINATIONS = [
-  [0, 1, 2],
-  [3, 4, 5],
-  [6, 7, 8],
-  [0, 3, 6],
-  [1, 4, 7],
-  [2, 5, 8],
-  [0, 4, 8],
-  [2, 4, 6],
+  [0, 1, 2], [3, 4, 5], [6, 7, 8],  // Rows
+  [0, 3, 6], [1, 4, 7], [2, 5, 8],  // Columns
+  [0, 4, 8], [2, 4, 6]              // Diagonals
 ];
 
 const Square = ({ value, onClick }) => (
@@ -31,6 +26,7 @@ const Board = ({ squares, onClick }) => (
 );
 
 const calculateWinner = (squares) => {
+    // Check all winning combinations to determine if there is a winner
   for (let i = 0; i < WINNING_COMBINATIONS.length; i++) {
     const [a, b, c] = WINNING_COMBINATIONS[i];
     if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
@@ -41,6 +37,7 @@ const calculateWinner = (squares) => {
 };
 
 const getComputerMove = (squares) => {
+  // Determine available squares and choose one at random for the computer's move
   const emptySquares = squares.reduce((acc, square, index) => {
     if (!square) acc.push(index);
     return acc;
@@ -49,6 +46,7 @@ const getComputerMove = (squares) => {
 };
 
 const Game = () => {
+  // State management
   const [history, setHistory] = useState([Array(9).fill(null)]);
   const [stepNumber, setStepNumber] = useState(0);
   const [xIsNext, setXIsNext] = useState(true);
@@ -58,6 +56,7 @@ const Game = () => {
   const [gameOver, setGameOver] = useState(false);
 
   useEffect(() => {
+    // Handle the computer's move if it's the computer's turn and the game is not over
     if (!xIsNext && !gameOver) {
       const timer = setTimeout(() => {
         const squares = history[stepNumber].slice();
@@ -69,12 +68,13 @@ const Game = () => {
   }, [xIsNext, gameOver, history, stepNumber]);
 
   const handleClick = (i) => {
+    // Handle a player's move and updates the game state as necessary
     const newHistory = history.slice(0, stepNumber + 1);
     const current = newHistory[newHistory.length - 1];
     const squares = current.slice();
 
     if (calculateWinner(squares) || squares[i]) {
-      return;
+      return; // Exit if the game is already won or the square is filled
     }
 
     squares[i] = xIsNext ? "X" : "O";
@@ -97,6 +97,7 @@ const Game = () => {
   };
 
   const nextMatch = () => {
+    // Resets the board but keeps scores
     setHistory([Array(9).fill(null)]);
     setStepNumber(0);
     setXIsNext(true);
@@ -105,6 +106,7 @@ const Game = () => {
   };
 
   const resetGame = () => {
+    // Resets the entire game
     setHistory([Array(9).fill(null)]);
     setStepNumber(0);
     setXIsNext(true);
@@ -155,11 +157,9 @@ const Game = () => {
             <Button onClick={nextMatch}>Next Match</Button>
           </div>
         )}
-        {(playerScore === 2 || computerScore === 2 || matchNumber === 3) && (
-          <div className="text-center mt-4">
-            <Button onClick={resetGame}>Restart Game</Button>
-          </div>
-        )}
+        <div className="text-center mt-4">
+          <Button onClick={resetGame}>Restart Game</Button>
+        </div>
       </CardContent>
     </Card>
   );
