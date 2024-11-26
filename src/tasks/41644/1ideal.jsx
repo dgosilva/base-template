@@ -1,182 +1,197 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const TimeInput = ({ value, onChange }) => {
-    const [hours, setHours] = useState("");
-    const [minutes, setMinutes] = useState("");
-    const [seconds, setSeconds] = useState("");
-  
-    useEffect(() => {
-      onChange(`${hours}:${minutes}:${seconds}`);
-    }, [hours, minutes, seconds, onChange]);
-  
-    const handleInputChange = (setter) => (e) => {
-      let val = e.target.value.replace(/\D/g, ""); // Only keep digits
-      if (val.length > 2) val = val.slice(0, 2); // Limit to 2 characters
-      setter(val);
-    };
-  
-    const handleBlur = (setter, value) => () => {
-      if (value.length === 1) {
-        setter("0" + value); // Add leading zero if necessary
-      } else if (value.length === 0) {
-        setter("00"); // Default to "00" if empty
-      }
-    };
-  
-    return (
-      <div className="flex space-x-2">
-        <Input
-          type="text"
-          value={hours}
-          onChange={handleInputChange(setHours)}
-          onBlur={handleBlur(setHours, hours)}
-          className="w-16 text-center"
-          placeholder="HH"
-          maxLength={2}
-        />
-        <span className="text-2xl">:</span>
-        <Input
-          type="text"
-          value={minutes}
-          onChange={handleInputChange(setMinutes)}
-          onBlur={handleBlur(setMinutes, minutes)}
-          className="w-16 text-center"
-          placeholder="MM"
-          maxLength={2}
-        />
-        <span className="text-2xl">:</span>
-        <Input
-          type="text"
-          value={seconds}
-          onChange={handleInputChange(setSeconds)}
-          onBlur={handleBlur(setSeconds, seconds)}
-          className="w-16 text-center"
-          placeholder="SS"
-          maxLength={2}
-        />
-      </div>
-    );
+  const handleChange = (e) => {
+    const { value } = e.target;
+    // Remove non-digit characters and format as HH:MM:SS
+    const masked = value.replace(/[^\d]/g, "").slice(0, 6);
+    const formatted = masked.replace(/^(\d{0,2})(\d{0,2})(\d{0,2}).*/, (_, h, m, s) => {
+      if (s) return `${h}:${m}:${s}`;
+      if (m) return `${h}:${m}`;
+      return h;
+    });
+    onChange(formatted);
   };
 
-const ResultCard = ({ title, value }) => (
-  <Card className="w-full sm:w-1/2 mb-4">
-    <CardHeader>
-      <CardTitle className="text-lg">{title}</CardTitle>
-    </CardHeader>
-    <CardContent>
-      <p className="text-2xl font-bold">{value}</p>
-    </CardContent>
-  </Card>
-);
+  return <Input type="text" value={value} onChange={handleChange} placeholder="HH:MM:SS" />;
+};
+
+const ResultDisplay = ({ result }) => {
+  if (!result) return null;
+
+  return (
+    <div className="mt-4 p-4 bg-gray-100 rounded-md">
+      <h3 className="font-semibold mb-2">Results:</h3>
+      <ul className="list-disc pl-5">
+        {Object.entries(result).map(([key, value]) => (
+          <li key={key}>
+            {key}: {value}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
 
 export default function App() {
+  const [calculationType, setCalculationType] = useState("pace");
+  const [distanceUnit, setDistanceUnit] = useState("km");
+  const [paceUnit, setPaceUnit] = useState("min/km");
   const [distance, setDistance] = useState("");
-  const [unit, setUnit] = useState("km");
-  const [time, setTime] = useState("00:00:00");
-  const [results, setResults] = useState(null);
+  const [time, setTime] = useState("");
+  const [pace, setPace] = useState("");
+  const [result, setResult] = useState(null);
 
   const calculatePace = () => {
     const [hours, minutes, seconds] = time.split(":").map(Number);
-    const totalSeconds = hours * 3600 + minutes * 60 + seconds;
-    const distanceNum = parseFloat(distance);
+    const totalMinutes = hours * 60 + minutes + seconds / 60;
+    let distanceValue = parseFloat(distance);
 
-    if (isNaN(distanceNum) || totalSeconds === 0) {
-      setResults(null);
-      return;
+    // Convert distance to kilometers if it's in miles
+    if (distanceUnit === "mi") {
+      distanceValue *= 1.60934;
     }
 
-    const distanceKm = unit === "km" ? distanceNum : distanceNum * 1.60934;
-    const distanceMiles = unit === "miles" ? distanceNum : distanceNum / 1.60934;
+    const paceMinKm = totalMinutes / distanceValue;
+    const paceMinMile = paceMinKm / 1.60934;
+    const speedKmH = 60 / paceMinKm;
+    const speedMiH = speedKmH / 1.60934;
 
-    const pacePerKm = totalSeconds / distanceKm;
-    const pacePerMile = totalSeconds / distanceMiles;
-    const speedKmH = (distanceKm / totalSeconds) * 3600;
-    const speedMilesH = (distanceMiles / totalSeconds) * 3600;
-
-    setResults({
-      pacePerKm: formatTime(pacePerKm),
-      pacePerMile: formatTime(pacePerMile),
-      speedKmH: speedKmH.toFixed(2),
-      speedMilesH: speedMilesH.toFixed(2),
+    setResult({
+      "Pace (min/km)": paceMinKm.toFixed(2),
+      "Pace (min/mile)": paceMinMile.toFixed(2),
+      "Speed (km/h)": speedKmH.toFixed(2),
+      "Speed (mph)": speedMiH.toFixed(2),
     });
   };
 
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  const calculateTime = () => {
+    let distanceValue = parseFloat(distance);
+    let paceValue = parseFloat(pace);
+
+    // Convert distance and pace to kilometers and min/km if in miles
+    if (distanceUnit === "mi") {
+      distanceValue *= 1.60934;
+    }
+    if (paceUnit === "min/mi") {
+      paceValue *= 1.60934;
+    }
+
+    const totalMinutes = distanceValue * paceValue;
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = Math.floor(totalMinutes % 60);
+    const seconds = Math.round((totalMinutes % 1) * 60);
+
+    const speedKmH = 60 / paceValue;
+    const speedMiH = speedKmH / 1.60934;
+
+    setResult({
+      "Time": `${hours.toString().padStart(2, "0")} H ${minutes.toString().padStart(2, "0")} min ${seconds.toString().padStart(2, "0")} sec`,
+      "Speed (km/h)": speedKmH.toFixed(2),
+      "Speed (mph)": speedMiH.toFixed(2),
+    });
+  };
+
+  const handleCalculate = () => {
+    if (calculationType === "pace") {
+      calculatePace();
+    } else {
+      calculateTime();
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
-      <Card className="max-w-lg mx-auto">
+    <div className="container mx-auto p-4 max-w-md">
+      <Card>
         <CardHeader>
-          <CardTitle className="text-2xl font-bold text-center">
-            Running Pace Calculator
-          </CardTitle>
+          <CardTitle>Running Calculator</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-6">
+          <form className="space-y-4">
+            {/* Calculation type selection */}
+            <div>
+              <Label>Calculation Type</Label>
+              <RadioGroup
+                value={calculationType}
+                onValueChange={setCalculationType}
+                className="flex space-x-4"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="pace" id="pace" />
+                  <Label htmlFor="pace">Pace</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="time" id="time" />
+                  <Label htmlFor="time">Time</Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+             {/* Distance input and unit selection */}
             <div>
               <Label htmlFor="distance">Distance</Label>
-              <div className="flex mt-1">
+              <div className="flex space-x-2">
                 <Input
                   id="distance"
                   type="number"
                   value={distance}
                   onChange={(e) => setDistance(e.target.value)}
-                  className="rounded-r-none"
+                  placeholder="Enter distance"
                 />
-                <RadioGroup
-                  defaultValue="km"
-                  onValueChange={setUnit}
-                  className="flex"
-                >
-                  <div className="flex items-center space-x-2 bg-white border border-l-0 border-input rounded-r-md px-3">
-                    <RadioGroupItem value="km" id="km" />
-                    <Label htmlFor="km">km</Label>
-                  </div>
-                  <div className="flex items-center space-x-2 bg-white border border-l-0 border-input rounded-r-md px-3">
-                    <RadioGroupItem value="miles" id="miles" />
-                    <Label htmlFor="miles">miles</Label>
-                  </div>
-                </RadioGroup>
+                <Select value={distanceUnit} onValueChange={setDistanceUnit}>
+                  <SelectTrigger className="w-24">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="km">km</SelectItem>
+                    <SelectItem value="mi">mi</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
-            <div>
-              <Label htmlFor="time">Time</Label>
-              <TimeInput value={time} onChange={setTime} />
-            </div>
-            <Button onClick={calculatePace} className="w-full">
-              Calculate
-            </Button>
-          </div>
+
+             {/* Conditional rendering for time or pace input based on calculation type */}
+            {calculationType === "pace" ? (
+              <div>
+                <Label htmlFor="time">Time</Label>
+                <TimeInput value={time} onChange={setTime} />
+              </div>
+            ) : (
+              <div>
+                <Label htmlFor="pace">Pace</Label>
+                <div className="flex space-x-2">
+                  <Input
+                    id="pace"
+                    type="number"
+                    value={pace}
+                    onChange={(e) => setPace(e.target.value)}
+                    placeholder="Enter pace"
+                  />
+                  <Select value={paceUnit} onValueChange={setPaceUnit}>
+                    <SelectTrigger className="w-24">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="min/km">min/km</SelectItem>
+                      <SelectItem value="min/mi">min/mi</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+
+            <Button onClick={handleCalculate} type="button">Calculate</Button>
+          </form>
+
+          <ResultDisplay result={result} />
         </CardContent>
       </Card>
-      {results && (
-        <div className="mt-8 max-w-lg mx-auto">
-          <h2 className="text-xl font-semibold mb-4">Results:</h2>
-          <div className="flex flex-wrap -mx-2">
-            <div className="w-full sm:w-1/2 px-2 mb-4">
-              <ResultCard title="Pace (min/km)" value={results.pacePerKm} />
-            </div>
-            <div className="w-full sm:w-1/2 px-2 mb-4">
-              <ResultCard title="Pace (min/mile)" value={results.pacePerMile} />
-            </div>
-            <div className="w-full sm:w-1/2 px-2 mb-4">
-              <ResultCard title="Speed (km/h)" value={results.speedKmH} />
-            </div>
-            <div className="w-full sm:w-1/2 px-2 mb-4">
-              <ResultCard title="Speed (miles/h)" value={results.speedMilesH} />
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
