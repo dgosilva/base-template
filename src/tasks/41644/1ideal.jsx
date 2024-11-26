@@ -40,6 +40,8 @@ const ResultDisplay = ({ result }) => {
 };
 
 export default function App() {
+  const KM_TO_MILES = 1.60934;
+
   const [calculationType, setCalculationType] = useState("pace");
   const [distanceUnit, setDistanceUnit] = useState("km");
   const [paceUnit, setPaceUnit] = useState("min/km");
@@ -55,13 +57,13 @@ export default function App() {
 
     // Convert distance to kilometers if it's in miles
     if (distanceUnit === "mi") {
-      distanceValue *= 1.60934;
+      distanceValue *= KM_TO_MILES;
     }
 
     const paceMinKm = totalMinutes / distanceValue;
-    const paceMinMile = paceMinKm / 1.60934;
+    const paceMinMile = paceMinKm / KM_TO_MILES;
     const speedKmH = 60 / paceMinKm;
-    const speedMiH = speedKmH / 1.60934;
+    const speedMiH = speedKmH / KM_TO_MILES;
 
     setResult({
       "Pace (min/km)": paceMinKm.toFixed(2),
@@ -77,10 +79,10 @@ export default function App() {
 
     // Convert distance and pace to kilometers and min/km if in miles
     if (distanceUnit === "mi") {
-      distanceValue *= 1.60934;
+      distanceValue *= KM_TO_MILES;
     }
     if (paceUnit === "min/mi") {
-      paceValue *= 1.60934;
+      paceValue *= KM_TO_MILES;
     }
 
     const totalMinutes = distanceValue * paceValue;
@@ -89,7 +91,7 @@ export default function App() {
     const seconds = Math.round((totalMinutes % 1) * 60);
 
     const speedKmH = 60 / paceValue;
-    const speedMiH = speedKmH / 1.60934;
+    const speedMiH = speedKmH / KM_TO_MILES;
 
     setResult({
       "Time": `${hours.toString().padStart(2, "0")} H ${minutes.toString().padStart(2, "0")} min ${seconds.toString().padStart(2, "0")} sec`,
