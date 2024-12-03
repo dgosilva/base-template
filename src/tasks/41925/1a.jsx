@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Tabs, TabsContent, TabsList, TabsTrigger,
-  Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle,
-  Button, Dialog, DialogContent, DialogTrigger, DialogClose, 
-  Input, Label, Progress, Toast, useToast
-} from "@/components/ui";
+// import { 
+//   Tabs, TabsContent, TabsList, TabsTrigger,
+//   Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle,
+//   Button, Dialog, DialogContent, DialogTrigger, DialogClose, 
+//   Input, Label, Progress, Toast, useToast
+// } from "@/components/ui";
 
 const initialPolls = [
   { id: 1, question: "What's your favorite color?", options: ["Red", "Blue", "Green"], votes: [5, 3, 7] },
